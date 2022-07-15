@@ -2,34 +2,44 @@
 # ---------------------------------------------------------------
 # Script    : pack-unpack.sh
 # Descrição : Compacta, Lista ou Extrai arquivos de pacotes
-# Versão    : 0.1
 # Autor     : Thiago Ribeiro <thiago.bernardes@aluno.ifsp.edu.br>
 # Data      : 15/07/21
 # Licença   : 
 # ---------------------------------------------------------------
 # Uso: ./pack-unpack [OPÇÕES] <diretórios> ou <arquivos>
 # ---------------------------------------------------------------
+# Versão 0.1: Primeira versão do script
+# Versão 0.2: Adaptado ao getopts (12/04/22)
+
+
+
 
 # Chave, variéveis e mensagens 
 SELETOR=0            # Seleciona as opções do script (1. compacta, 2. lista, 3. extrai)   
-count=1 	      # Variável do contador	
+
+versao () {
+
+echo -n "$(basename "$0")" 
+grep '^# Versão ' "$0" | tail -1 | cut -d : -f 1 | tr -d \#
+exit 0
+
+}
 
 MENSAGEM_USO="
 
-Uso: $(basename "$0") [OPÇÕES] arq01..arqN
+Uso: $(basename "$0") [OPÇÕES] <dir> ou arq1...arqN
 
 OPÇÕES:
 
-	-c 			Modo COMPACTAÇÃO
-	-l			Modo LISTAGEM
-	-x			Modo EXTRAÇÃO
-
-	-h, --help		Exibe este menu de ajuda e encerra programa
-	-v, --version		Exibe nome e versão do programa
+	-c  Modo COMPACTAÇÃO
+	-l  Modo LISTAGEM
+	-x  Modo EXTRAÇÃO
+	-h  Exibe este menu de ajuda e encerra programa
+	-v  Exibe nome e versão do programa
 
 "
 
-MENSAGEM_ERRO="
+MENSAGEM_ERRO_1="
 
 Insira uma opção válida.
 Para acessar ajuda, digite
@@ -38,8 +48,17 @@ Para acessar ajuda, digite
 
 "
 
+MENSAGEM_ERRO_2="
 
-## função compactação - recebe um array com arquivos para serem compactados. 
+Erro: Faltou argumento para o comando.
+
+Para acessar ajuda, digite
+
+	./pack-unpack.sh -h ou --help
+"
+
+
+## função compactação 
 
 compactArq () {
 
@@ -93,7 +112,7 @@ listarPct () {
 	echo -e "______________________________________________\n"
 }
 
-## função extração - recebe um array com arquivos empactodaos/compactados e extrai seu conteúdo
+## função extração 
 
 descompactArq () {
 
@@ -129,51 +148,33 @@ printf   "\033[2J\033[H"
 echo -e  "~pack-Unpack~ "
 sleep 1
 
-## tratamento das variáveis que chegam da linha de comando. após o teste com $1, o comando shift retira ele da lista de argumentos
-## e o próximo argumento é testado como sendo $1. Quando acabarem os argumentos da lista, o script sai do laço while
 
-while test -n "$1"
+## tratamento das variáveis que chegam da linha de comando.
+
+test -z "$1" && echo "$MENSAGEM_ERRO_2" && exit 1
+
+
+while getopts ":c:l:x:hv" opcoes
 do
-
-	case "$1" in
-	
-	# Opções que ligam/desligam chaves
-	-h | --help ) 
-		echo "$MENSAGEM_USO"
-		exit 0
-	;;
-	-v | --version)
-		echo -n $(basename "$0")
-		# Extrai a versão diretamente dos cabeçalhos do programa
-		grep '^# Versão ' "$0" | tail -1 | cut -d : -f 1 | tr -d \#
-		exit 0
-	;;
-
-	
-	
-	-c ) SELETOR=1 ;;
-	-l ) SELETOR=2 ;;
-	-x ) SELETOR=3 ;;
-	 * ) 
-	 	# array que armazena arquivos a serem tratados. índice é a variável contadora que é incrementada ao final de
-	 	# cada ciclo do loop
-	 	arquivo[$count]="$1" 
-	 ;;
-	esac
-
-	# A Opção $1 já processada, a fila deve andar
+  case $opcoes in
+     c) SELETOR=1   ;; 
+     l) SELETOR=2   ;; 
+     x) SELETOR=3   ;; 
+     h) echo "$MENSAGEM_USO" ; exit 0 ;;
+     v) versao ;;
+  esac
 	shift
-	
-	# incrementa o contador que serve de índice para o array que armazena os arquivos a serem tratados pelo script
-	((count++))
+	arquivo="$*"
 done
+
+
 
 # Escolhe o modo de execução
 case $SELETOR in
-	1) compactArq ${arquivo} ;;	#Compacta/Empacota
-	2) listarPct ${arquivo} ;;	#Lista conteúdo	
-	3) descompactArq ${arquivo} ;; #Descompacta
-	*) echo "$MENSAGEM_ERRO" ; exit 1 ;;
+	1) compactArq $* ;;	
+	2) listarPct $* ;;		
+	3) descompactArq $* ;;
+	*) echo "$MENSAGEM_ERRO_1" ; exit 1 ;;
 esac
 
 

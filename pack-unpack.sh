@@ -10,6 +10,7 @@
 # ---------------------------------------------------------------
 # Versão 0.1: Primeira versão do script
 # Versão 0.2: Adaptado ao getopts (12/04/22)
+# Versão 1.0: Suporte a Cpio e formatação de nomes de arquivos de entrada (14/07/2022)
 
 
 
@@ -36,6 +37,8 @@ OPÇÕES:
 	-x  Modo EXTRAÇÃO
 	-h  Exibe este menu de ajuda e encerra programa
 	-v  Exibe nome e versão do programa
+	
+FORMATOS SUPORTADOS: Tar, Gzip, Bzip, Rar, Zip e Cpio
 
 "
 
@@ -63,27 +66,40 @@ Para acessar ajuda, digite
 compactArq () {
 
 	echo -e "\nModo: COMPACTAÇÃO\n"
-	read -p "${arquivo[*]}"
-
+	
+	lenght=${#arquivo[*]}
+	for ((i=0; i<lenght; i++)); do
+		find ${arquivo[i]} -iname "* *" -exec bash -c 'mv "$0" "${0// /_}"' {} \;
+		arquivos=($(find ${arquivo[i]} -type f))
+	done
+	
+	comprimento=${#arquivos[*]}
+	for ((i=0; i<comprimento; i++)); do
+		echo -e ${arquivos[i]}
+	done
+	
+	echo " "
+	
 	echo -e  "      *Menu de opções*\n     "
 	echo     "1. .Tar"
 	echo     "2. .Tar.gz"
 	echo     "3. .Tar.bz2"
 	echo     "4. .Zip"
-	echo -e  "5. .Rar\n\n"
+	echo     "5. .Rar"
+	echo -e  "6. .Cpio"
 	read -p  "Sua opção: " option
-	read -p "Insira um nome para o arquivo a ser criado: " arqname 
-
+	read -p "Insira um nome para o pacote a ser criado: " arqname 
+	
 	case  $option in
 		1) tar -cvf $arqname.tar ${arquivo[@]} ;;
 		2) tar -zcvf $arqname.tar.gz  ${arquivo[@]} ;;
 		3) tar -jcvf $arqname.tar.bz2  ${arquivo[@]} ;;
 		4) zip -r $arqname.zip  ${arquivo[@]} ;;			
 		5) rar a $arqname.rar  ${arquivo[@]} ;;
+		6) find ${arquivo[@]} | cpio -o > $arqname.cpio ;;
 		*) read -p "Formato não suportado"; exit 1 ;;
 	esac
-	echo "status da operação: $?"
-	read -p "Pressione enter para avançar "
+	
 } 
 
 
@@ -94,7 +110,7 @@ listarPct () {
 
 	read -p "Modo: LISTAGEM"
 	read -p "${arquivo[*]}"
-
+	
 	for file in ${arquivo[@]}
 	do
 	  ext=${file: -3:3}
@@ -104,6 +120,7 @@ listarPct () {
 	        zip) unzip -l $file ;;
 	        rar) unrar l $file ;;
     tar | bz2 | .gz) tar -tvf $file ;;
+    		pio) cpio -t < $file;;
 	          *) read -p "Formato não suportado" ; exit 1 ;;
 	  esac
 	  echo -e "\n"
@@ -132,6 +149,7 @@ descompactArq () {
 	    tar) tar -xvf $file -C ./$dirname ;;
 	    bz2) tar -jxvf $file -C ./$dirname ;;
 	    .gz) tar -zxvf $file -C ./$dirname ;;
+	    pio) cpio -D ./$dirname -iu < $file ;;
 	    *) read -p "Formato não suportado" ; exit 1 ;;
 	  esac
 	  echo "$?" 

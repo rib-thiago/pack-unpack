@@ -1,14 +1,11 @@
-			~Pack-Unpack~
+~Pack-Unpack~
 
-Este script utiliza ferramentas de compressão de arquivos comuns em
-distribuições Linux para, de uma forma simplificada, compactar, lis-
-tar e extrair arquivos compactados.
+Este script utiliza ferramentas de compressão de arquivos comuns em distribuições Linux para, de uma forma simplificada, compactar, listar e extrair arquivos compactados.
 
-Trata-se do fruto de meus estudos em bash script e, portanto, está
-sujeito a modificações ao longo do tempo. Contribuições são Bem Vindas.
+Trata-se do fruto de meus estudos em bash script e, portanto, está sujeito a modificações ao longo do tempo. Contribuições são bem vindas.
 
  Para executar no Console:
- ./pack-unpack [OPÇÕES] arquivos
+ pack-unpack.sh [OPÇÕES] arquivos
 
 Data de Criação: 13/07/2021
 Autor: Thiago Ribeiro

@@ -11,6 +11,7 @@
 # Versão 0.1: Primeira versão do script
 # Versão 0.2: Adaptado ao getopts (12/04/22)
 # Versão 1.0: Suporte a Cpio e formatação de nomes de arquivos de entrada (14/07/2022)
+# Versão 1.1: Opção de Extrair após listar (15/05/2022)
 
 
 
@@ -99,6 +100,8 @@ compactArq () {
 		6) find ${arquivo[@]} | cpio -o > $arqname.cpio ;;
 		*) read -p "Formato não suportado"; exit 1 ;;
 	esac
+	echo  " "
+	read -p "Pressione enter para avançar"
 	
 } 
 
@@ -123,10 +126,12 @@ listarPct () {
     		pio) cpio -t < $file;;
 	          *) read -p "Formato não suportado" ; exit 1 ;;
 	  esac
-	  echo -e "\n"
+	  echo  " "
 	  read -p "Pressione enter para avançar"
 	done
-	echo -e "______________________________________________\n"
+	echo  " "
+	read -p "Digite sim para extrair " sim
+	[ $sim = "sim" ] 2> /dev/null && descompactArq $* 
 }
 
 ## função extração 
@@ -152,15 +157,13 @@ descompactArq () {
 	    pio) cpio -D ./$dirname -iu < $file ;;
 	    *) read -p "Formato não suportado" ; exit 1 ;;
 	  esac
-	  echo "$?" 
+	  echo  " "
 	  read -p "Pressione enter para avançar"
 	done
-	echo -e "______________________________________________\n"
+	
 }
 
-
-
-
+## cabeçalho do script
 
 printf   "\033[2J\033[H"
 echo -e  "~pack-Unpack~ "

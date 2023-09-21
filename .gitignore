@@ -21,3 +21,6 @@
 # Ignora outros arquivos temporários
 *~
 .DS_Store
+
+# Arquivos de trabalho
+pack-unpack.sh

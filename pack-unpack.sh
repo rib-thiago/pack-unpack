@@ -33,6 +33,29 @@ uso() {
     exit 0
 }
 
+expandir_diretorios_e_wildcards() {
+    local arquivos_expandidos=()
+
+    for item in "$@"; do
+        # Se o item for um diretório, adicionar todos os arquivos do diretório ao array
+        if [[ -d "$item" ]]; then
+            while IFS= read -r -d $'\0' file; do
+                arquivos_expandidos+=("$file")
+            done < <(find "$item" -type f -print0)
+        else
+            # Expansão de wildcards e verificação se o arquivo existe
+            for file in $item; do
+                if [[ -e "$file" ]]; then
+                    arquivos_expandidos+=("$file")
+                fi
+            done
+        fi
+    done
+
+    # Retornar o array de arquivos expandidos
+    echo "${arquivos_expandidos[@]}"
+}
+
 # Função para verificar dependências
 verificar_dependencias() {
     local dependencias=("tar" "gzip" "bzip2" "zip" "rar" "unrar" "unzip")
@@ -74,7 +97,6 @@ verificar_arquivos_existentes() {
         exit 1
     fi
 }
-
 
 # Função para validar o formato do pacote
 validar_pacote() {
@@ -209,6 +231,7 @@ while getopts ":c:l:x:ihv" opcoes; do
     esac
 done
 
+arquivos=($(expandir_diretorios_e_wildcards "${arquivos[@]}"))
 verificar_arquivos_existentes "${arquivos[@]}"
 
 # Escolhe o modo de execução

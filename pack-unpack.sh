@@ -47,6 +47,7 @@ verificar_dependencias() {
 verificar_arquivos_existentes() {
     local arquivos=("$@")
     local erros=()
+    local extensoes_validas=("tar" "gz" "bz2" "zip" "rar")
 
     # Verificar se todos os arquivos existem e validar os formatos
     for file in "${arquivos[@]}"; do
@@ -54,8 +55,12 @@ verificar_arquivos_existentes() {
             erros+=("$file: Arquivo não encontrado")
         else
             local ext="${file##*.}"
-            if ! validar_pacote "$file" "$ext"; then
-                erros+=("$file: Arquivo não é um pacote válido de formato $ext")
+            
+            # Verificar se a extensão é válida e, em caso afirmativo, validar o pacote
+            if echo "${extensoes_validas[@]}" | grep -wq "$ext"; then
+                if ! validar_pacote "$file" "$ext"; then
+                    erros+=("$file: Arquivo não é um pacote válido de formato $ext")
+                fi
             fi
         fi
     done
@@ -69,6 +74,7 @@ verificar_arquivos_existentes() {
         exit 1
     fi
 }
+
 
 # Função para validar o formato do pacote
 validar_pacote() {
@@ -126,12 +132,9 @@ compactar_arquivos() {
         5) rar a "$arqname.rar" "${arquivos[@]}" &> ${NULL} ;;
         *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
     esac
-
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}Operação de compactação concluída com sucesso!${RESET}"
-    else
-        echo -e "${RED}Erro na operação de compactação.${RESET}"
-    fi
+    
+    local status=$?
+    [ $status -eq 0 ] && echo -e "${GREEN}Operação de compactação concluída com sucesso!${RESET}" || echo -e "${RED}Erro na operação de compactação.${RESET}"
 
 
 }
@@ -152,6 +155,10 @@ listar_pacote () {
             tar | bz2 | gz) tar -tf "$file" 2>/dev/null ;;
             *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
+
+        local status=$?
+        [ $status -eq 0 ] && echo -e "${GREEN}Operação de listagem concluída com sucesso!${RESET}" || echo -e "${RED}Erro na operação de listagem.${RESET}"
+
     done
 }
 
@@ -174,11 +181,8 @@ descompactar_arquivos() {
             gz) tar -zxvf "$file" -C ./"$dirname" &> ${NULL} ;;
             *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}Arquivo ${YELLOW}$file${GREEN} extraído com sucesso em ${YELLOW}$dirname${GREEN}.${RESET}"
-        else
-            echo -e "${RED}Erro ao extrair o arquivo ${YELLOW}$file${RED}.${RESET}"
-        fi
+        local status=$?
+        [ $status -eq 0 ] && echo -e "${GREEN}Arquivo ${YELLOW}$file${GREEN} extraído com sucesso em ${YELLOW}$dirname${GREEN}.${RESET}" || echo -e "${RED}Erro ao extrair o arquivo ${YELLOW}$file${RED}.${RESET}"
     done
     
 

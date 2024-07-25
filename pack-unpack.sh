@@ -8,6 +8,7 @@ BLUE="\033[34m"
 MAGENTA="\033[35m"
 RESET="\033[0m"
 NEWLINE="\n"
+NULL="/dev/null"
 
 versao() {
     echo -n "$(basename "$0")"
@@ -37,13 +38,14 @@ verificar_dependencias() {
     local dependencias=("tar" "gzip" "bzip2" "zip" "rar" "unrar" "unzip")
     for dep in "${dependencias[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            echo -e "${RED}Erro: Dependência '$dep' não encontrada. Instale-a e tente novamente.${RESET}"
+            echo -e "${NEWLINE}${RED}Erro: Dependência '$dep' não encontrada. Instale-a e tente novamente.${RESET}"
             exit 1
         fi
     done
 }
 
 modo_interativo() {
+    clear
     echo -e "${GREEN}MENU INTERATIVO${RESET}"
     echo -e "${NEWLINE} Informe os arquivos ou pacotes: ${NEWLINE}"
     read -a arquivos
@@ -74,14 +76,21 @@ compactar_arquivos() {
     echo -e "${NEWLINE}"
 
     case $option in
-        1) tar -cvf "$arqname.tar" "${arquivos[@]}" ;;
-        2) tar -zcvf "$arqname.tar.gz" "${arquivos[@]}" ;;
-        3) tar -jcvf "$arqname.tar.bz2" "${arquivos[@]}" ;;
-        4) zip "$arqname.zip" "${arquivos[@]}" ;;
-        5) rar a "$arqname.rar" "${arquivos[@]}" ;;
+        1) tar -cvf "$arqname.tar" "${arquivos[@]}" &> ${NULL} ;;
+        2) tar -zcvf "$arqname.tar.gz" "${arquivos[@]}" &> ${NULL} ;;
+        3) tar -jcvf "$arqname.tar.bz2" "${arquivos[@]}" &> ${NULL} ;;
+        4) zip "$arqname.zip" "${arquivos[@]}" &> ${NULL} ;;
+        5) rar a "$arqname.rar" "${arquivos[@]}" &> ${NULL} ;;
         *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
     esac
-    # echo "status da operação: $?"
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Operação de compactação concluída com sucesso!${RESET}"
+    else
+        echo -e "${RED}Erro na operação de compactação.${RESET}"
+    fi
+
+
 }
 
 listar_pacote () {
@@ -91,14 +100,23 @@ listar_pacote () {
         local ext="${file##*.}"
         echo -e "${NEWLINE}Pacote:${NEWLINE}"
         echo -e "${YELLOW}$file${RESET}${NEWLINE}"
+        echo -e "Conteúdo:${NEWLINE}"
+        
+        # Verificar se o arquivo existe
+        if [[ ! -e "$file" ]]; then
+            echo -e "${RED}Não é possível abrir $file${RESET}"
+            echo -e "${RED}Arquivo ou diretório inexistente${RESET}"
+            continue
+        fi
+
+        # Processar o arquivo
         case $ext in
-            zip) unzip -l "$file" ;;
-            rar) unrar l "$file" ;;
-            tar | bz2 | gz) tar -tvf "$file" ;;
+            zip) unzip -l "$file" 2>/dev/null | awk 'NR>3 {print $4}' | sed '$d' ;;
+            rar) unrar l "$file" 2>/dev/null | sed '1,8d' | tac | sed '1,3d' | tac | awk '{print $NF}' ;;
+            tar | bz2 | gz) tar -tf "$file" 2>/dev/null ;;
             *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
     done
-    echo -e "______________________________________________\n"
 }
 
 descompactar_arquivos() {
@@ -113,20 +131,25 @@ descompactar_arquivos() {
         mkdir -p "./$dirname"
 
         case $ext in
-            zip) unzip "$file" -d ./"$dirname" ;;
-            rar) unrar x "$file" ./"$dirname" ;;
-            tar) tar -xvf "$file" -C ./"$dirname" ;;
-            bz2) tar -jxvf "$file" -C ./"$dirname" ;;
-            gz) tar -zxvf "$file" -C ./"$dirname" ;;
+            zip) unzip "$file" -d ./"$dirname" &> ${NULL} ;;
+            rar) unrar x "$file" ./"$dirname" &> ${NULL} ;;
+            tar) tar -xvf "$file" -C ./"$dirname" &> ${NULL} ;;
+            bz2) tar -jxvf "$file" -C ./"$dirname" &> ${NULL} ;;
+            gz) tar -zxvf "$file" -C ./"$dirname" &> ${NULL} ;;
             *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
 #       echo "$?"
     done
-    echo -e "______________________________________________\n"
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Arquivo ${YELLOW}$file${GREEN} extraído com sucesso em ${YELLOW}$dirname${GREEN}.${RESET}"
+    else
+        echo -e "${RED}Erro ao extrair o arquivo ${YELLOW}$file${RED}.${RESET}"
+    fi
 }
 
 # Verifica dependências
-# verificar_dependencias
+verificar_dependencias
 
 # Variáveis
 SELETOR=0

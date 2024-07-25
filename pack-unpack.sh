@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# ---------------------------------------------------------------
+# Script    : pack-unpack
+# Descrição : 
+# Versão    : 0.6 - suporte expansão de wildcards e diretórios
+# Autor     : Thiago Ribeiro <mackandalls@gmail.com>
+# Data      : 25/07/24
+# Licença   : 
+# ---------------------------------------------------------------
+# Uso: pack-unpack [OPÇÕES] arq01..arqN
+# ---------------------------------------------------------------
+
+#!/usr/bin/env bash
 
 # Caracteres de Escape
 GREEN="\033[32m"
@@ -11,10 +23,11 @@ NEWLINE="\n"
 NULL="/dev/null"
 
 versao() {
-    echo -n "$(basename "$0")"
-    grep '^# Versão ' "$0" | tail -1 | cut -d : -f 2 | tr -d ' '
+    echo -n "$(basename "$0") "
+    grep '^# Versão ' "$0" | tail -1 | cut -d ':' -f 2 | sed 's/^ *//'
     exit 0
 }
+
 
 uso() {
     echo -e "

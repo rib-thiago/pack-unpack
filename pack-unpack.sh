@@ -18,19 +18,18 @@ versao() {
 
 uso() {
     echo -e "
-${YELLOW}
-Uso: pack-unpack [OPÇÕES] arq01..arqN
+    ${YELLOW}
+    Uso: pack-unpack [OPÇÕES] arq01..arqN
 
-OPÇÕES:
+    OPÇÕES:
 
-  -c  Modo COMPACTAÇÃO
-  -l  Modo LISTAGEM
-  -x  Modo EXTRAÇÃO
-  -i  Modo INTERATIVO
-  -h  Exibe este menu de ajuda e encerra programa
-  -v  Exibe nome e versão do programa
-${RESET}
-"
+        -c  Modo COMPACTAÇÃO
+        -l  Modo LISTAGEM
+        -x  Modo EXTRAÇÃO
+        -i  Modo INTERATIVO
+        -h  Exibe este menu de ajuda e encerra programa
+        -v  Exibe nome e versão do programa
+    ${RESET}"
     exit 0
 }
 
@@ -43,6 +42,49 @@ verificar_dependencias() {
             exit 1
         fi
     done
+}
+
+verificar_arquivos_existentes() {
+    local arquivos=("$@")
+    local erros=()
+
+    # Verificar se todos os arquivos existem e validar os formatos
+    for file in "${arquivos[@]}"; do
+        if [[ ! -e "$file" ]]; then
+            erros+=("$file: Arquivo não encontrado")
+        else
+            local ext="${file##*.}"
+            if ! validar_pacote "$file" "$ext"; then
+                erros+=("$file: Arquivo não é um pacote válido de formato $ext")
+            fi
+        fi
+    done
+
+    # Se houver erros, imprime os erros e sai com código 1
+    if [ ${#erros[@]} -gt 0 ]; then
+        echo -e "${NEWLINE}${RED}Os seguintes arquivos apresentaram erros:${RESET}${NEWLINE}"
+        for erro in "${erros[@]}"; do
+            echo -e "${RED}$erro${RESET}"
+        done
+        exit 1
+    fi
+}
+
+# Função para validar o formato do pacote
+validar_pacote() {
+    local file="$1"
+    local ext="$2"
+
+    case $ext in
+        zip) unzip -tq "$file" &> /dev/null ;;
+        rar) unrar t "$file" &> /dev/null ;;
+        tar) tar -tf "$file" &> /dev/null ;;
+        bz2) tar -jtf "$file" &> /dev/null ;;
+        gz) tar -ztf "$file" &> /dev/null ;;
+        *) return 1 ;;  # Formato não suportado
+    esac
+
+    return $?
 }
 
 modo_interativo() {
@@ -103,13 +145,6 @@ listar_pacote () {
         echo -e "${YELLOW}$file${RESET}${NEWLINE}"
         echo -e "Conteúdo:${NEWLINE}"
         
-        # Verificar se o arquivo existe
-        if [[ ! -e "$file" ]]; then
-            echo -e "${RED}Não é possível abrir $file${RESET}"
-            echo -e "${RED}Arquivo ou diretório inexistente${RESET}"
-            continue
-        fi
-
         # Processar o arquivo
         case $ext in
             zip) unzip -l "$file" 2>/dev/null | awk 'NR>3 {print $4}' | sed '$d' ;;
@@ -139,14 +174,14 @@ descompactar_arquivos() {
             gz) tar -zxvf "$file" -C ./"$dirname" &> ${NULL} ;;
             *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
-#       echo "$?"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}Arquivo ${YELLOW}$file${GREEN} extraído com sucesso em ${YELLOW}$dirname${GREEN}.${RESET}"
+        else
+            echo -e "${RED}Erro ao extrair o arquivo ${YELLOW}$file${RED}.${RESET}"
+        fi
     done
     
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}Arquivo ${YELLOW}$file${GREEN} extraído com sucesso em ${YELLOW}$dirname${GREEN}.${RESET}"
-    else
-        echo -e "${RED}Erro ao extrair o arquivo ${YELLOW}$file${RED}.${RESET}"
-    fi
+
 }
 
 # Verifica dependências
@@ -169,6 +204,8 @@ while getopts ":c:l:x:ihv" opcoes; do
         :) echo -e "${RED}A opção -$OPTARG requer um argumento.${RESET}"; uso ;;   # Falta argumento para uma opção
     esac
 done
+
+verificar_arquivos_existentes "${arquivos[@]}"
 
 # Escolhe o modo de execução
 case $SELETOR in

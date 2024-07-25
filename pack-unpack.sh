@@ -32,6 +32,16 @@ verificar_dependencias() {
     done
 }
 
+modo_interativo() {
+    echo "Informe os arquivos:"
+    read -a arquivos
+    echo "Escolha o modo:"
+    echo "1. Compactar"
+    echo "2. Listar"
+    echo "3. Extrair"
+    read -p "Sua opção: " SELETOR
+}
+
 compactar_arquivos() {
     local arquivos=("$@")
     echo "${arquivos[@]}"
@@ -102,28 +112,18 @@ SELETOR=0
 declare -a arquivos
 
 # Tratamento de opções
-while getopts ":c:l:x:hv" opcoes; do
+while getopts ":c:l:x:ihv" opcoes; do
     case $opcoes in
-        c) SELETOR=1 ;;
-        l) SELETOR=2 ;;
-        x) SELETOR=3 ;;
+        c) SELETOR=1; shift $((OPTIND - 2)); arquivos+=("$@") ;;
+        l) SELETOR=2; shift $((OPTIND - 2)); arquivos+=("$@");;
+        x) SELETOR=3; shift $((OPTIND - 2)); arquivos+=("$@") ;;
+        i) modo_interativo "$SELETOR" "$arquivos" ;;
         h) uso ;;
         v) versao ;;
         \?) echo "Opção inválida: -$OPTARG"; uso ;;  # Opção inválida
         :) echo "A opção -$OPTARG requer um argumento."; uso ;;   # Falta argumento para uma opção
     esac
 done
-
-# Remove as opções da lista de argumentos
-shift $((OPTIND - 2))
-
-# Coleta arquivos restantes após as opções
-if [ "$#" -gt 0 ]; then
-    arquivos+=("$@")
-else
-    echo "Você deve fornecer arquivos."
-    uso
-fi
 
 # Escolhe o modo de execução
 case $SELETOR in

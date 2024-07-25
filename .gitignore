@@ -1,0 +1,26 @@
+# Ignora arquivos de log
+*.log
+
+# Ignora arquivos gerados pelo editor
+.vscode/
+.editorconfig
+*.code-workspace
+
+# Ignora arquivos gerados pelos linters e formatters
+.shfmt.cache
+.bashate_cache
+
+# Ignora arquivos gerados pelo shellcheck
+**/*.sh.session
+
+# Ignora arquivos gerados pelo shell-format
+**/*.sh.backup
+**/*.sh.undo
+**/*.sh.swp
+
+# Ignora outros arquivos temporários
+*~
+.DS_Store
+
+# Arquivos de trabalho
+pack-unpack.sh

@@ -19,13 +19,14 @@ versao() {
 uso() {
     echo -e "
 ${YELLOW}
-Uso: $(basename "$0") [OPÇÕES] arq01..arqN
+Uso: pack-unpack [OPÇÕES] arq01..arqN
 
 OPÇÕES:
 
   -c  Modo COMPACTAÇÃO
   -l  Modo LISTAGEM
   -x  Modo EXTRAÇÃO
+  -i  Modo INTERATIVO
   -h  Exibe este menu de ajuda e encerra programa
   -v  Exibe nome e versão do programa
 ${RESET}
@@ -174,6 +175,7 @@ case $SELETOR in
     1) compactar_arquivos "${arquivos[@]}" ;;
     2) listar_pacote "${arquivos[@]}" ;;
     3) descompactar_arquivos "${arquivos[@]}" ;;
+    *) uso ;;
 esac
 
 echo -e "${NEWLINE}${GREEN}Obrigado!${RESET}"

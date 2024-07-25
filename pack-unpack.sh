@@ -23,15 +23,11 @@
 # Data : 15/07/21
 #
 #
-# TODO: 1. criar seletores para sistemas que não possuem instalado os
-# progrmas Zip e Rar.
-#      
-#
-#
 #
 
-# Chave, variéveis e mensagens 
-SELETOR=0            # Seleciona as opções do script (1. compacta, 2. lista, 3. extrai)   
+#
+# SELETOR=0
+
 versao (){
 
 echo -n "$(basename "$0")" 
@@ -40,8 +36,9 @@ exit 0
 
 }
 
-MENSAGEM_USO="
 
+uso (){
+  echo "
 Uso: $(basename "$0") [OPÇÕES] arq01..arqN
 
 OPÇÕES:
@@ -51,30 +48,40 @@ OPÇÕES:
   -x  Modo EXTRAÇÃO
   -h  Exibe este menu de ajuda e encerra programa
   -v  Exibe nome e versão do programa
-
 "
+  exit 0
+}
 
-MENSAGEM_ERRO_1="
+# Função para verificar dependências
+verificar_dependencias() {
+  local dependencias=("tar" "gzip" "bzip2" "zip" "rar" "unrar" "unzip")
+  for dep in "${dependencias[@]}"; do
+    if ! command -v "$dep" &> /dev/null; then
+      echo "Erro: Dependência '$dep' não encontrada. Instale-a e tente novamente."
+      exit 1
+    fi
+  done
+}
 
-Insira uma opção válida.
-Para acessar ajuda, digite
+# MENSAGEM_ERRO_1="
+# 
+# Insira uma opção válida.
+# Para acessar ajuda, digite
+# 
+# 	./pack-unpack.sh -h ou --help
+# 
+# "
+# 
+# MENSAGEM_ERRO_2="
+# 
+# Erro: Faltou argumento para: $OPTARG
+# 
+# Para acessar ajuda, digite
+# 
+# 	./pack-unpack.sh -h ou --help
+# "
 
-	./pack-unpack.sh -h ou --help
-
-"
-
-MENSAGEM_ERRO_2="
-
-Erro: Faltou argumento para: $OPTARG
-
-Para acessar ajuda, digite
-
-	./pack-unpack.sh -h ou --help
-"
-
-## função compactação - recebe um array com arquivos para serem compactados. 
-
-compactArq () {
+compactar_arquivos () {
 
 	echo -e "\nModo: COMPACTAÇÃO\n"
 	read -p "${arquivo[*]}"
@@ -102,10 +109,7 @@ compactArq () {
 }
 
 
-## função listagem - recebe um array com arquivos empacotados/compactados e lista seu conteúdo. 
-## laço for para listar um arquivo por vez
-
-listarPct () {
+listar_pacote () {
 
   read -p "Modo: LISTAGEM"
   read -p "${arquivo[*]}"
@@ -126,7 +130,7 @@ tar | bz2 | .gz) tar -tvf $file ;;
   echo -e "______________________________________________\n"
 }
 
-descompactArq () {
+descompactar_arquivos () {
 
   read -p "Modo: EXTRAÇÃO"
   read -p "${arquivo[*]}"
@@ -154,19 +158,17 @@ descompactArq () {
 
 
 
+# Verifica dependências
+verificar_dependencias
 
-
-printf   "\033[2J\033[H"
 echo -e  "~pack-Unpack~ "
-sleep 1
 
 ## tratamento das variáveis que chegam da linha de comando. após o teste com $1, o comando shift retira ele da lista de argumentos
 ## e o próximo argumento é testado como sendo $1. Quando acabarem os argumentos da lista, o script sai do laço while
 
 #test "$1" == 0 && echo "$MENSAGEM_ERRO_1" 
 
-
-
+SELETOR=0
 test -z "$1" && echo "$MENSAGEM_ERRO_1" 
 
 
@@ -190,9 +192,9 @@ done
 
 # Escolhe o modo de execução
 case $SELETOR in
-	1) compactArq $* ;;	#Compacta/Empacota
-	2) listarPct $* ;;	#Lista conteúdo	
-	3) descompactArq $* ;; #Descompacta
+	1) compactar_arquivos $* ;;	#Compacta/Empacota
+	2) listar_pacote $* ;;	#Lista conteúdo	
+	3) descompactar_arquivos $* ;; #Descompacta
 #	*) echo "$MENSAGEM_ERRO" ; exit 1 ;;
 esac
 

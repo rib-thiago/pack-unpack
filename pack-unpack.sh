@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# Caracteres de Escape
+GREEN="\033[32m"
+RED="\033[31m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
+MAGENTA="\033[35m"
+RESET="\033[0m"
+NEWLINE="\n"
+
 versao() {
     echo -n "$(basename "$0")"
     grep '^# Versão ' "$0" | tail -1 | cut -d : -f 2 | tr -d ' '
@@ -7,7 +16,8 @@ versao() {
 }
 
 uso() {
-    echo "
+    echo -e "
+${YELLOW}
 Uso: $(basename "$0") [OPÇÕES] arq01..arqN
 
 OPÇÕES:
@@ -17,6 +27,7 @@ OPÇÕES:
   -x  Modo EXTRAÇÃO
   -h  Exibe este menu de ajuda e encerra programa
   -v  Exibe nome e versão do programa
+${RESET}
 "
     exit 0
 }
@@ -26,34 +37,41 @@ verificar_dependencias() {
     local dependencias=("tar" "gzip" "bzip2" "zip" "rar" "unrar" "unzip")
     for dep in "${dependencias[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            echo "Erro: Dependência '$dep' não encontrada. Instale-a e tente novamente."
+            echo -e "${RED}Erro: Dependência '$dep' não encontrada. Instale-a e tente novamente.${RESET}"
             exit 1
         fi
     done
 }
 
 modo_interativo() {
-    echo "Informe os arquivos:"
+    echo -e "${GREEN}MENU INTERATIVO${RESET}"
+    echo -e "${NEWLINE} Informe os arquivos ou pacotes: ${NEWLINE}"
     read -a arquivos
-    echo "Escolha o modo:"
+    echo -e "${NEWLINE} Escolha o modo: ${NEWLINE}"
     echo "1. Compactar"
     echo "2. Listar"
-    echo "3. Extrair"
+    echo -e "3. Extrair ${NEWLINE}"
     read -p "Sua opção: " SELETOR
+    echo -e "${NEWLINE}"
+    clear
 }
 
 compactar_arquivos() {
     local arquivos=("$@")
-    echo "${arquivos[@]}"
-    echo -e "      *Menu de opções*\n     "
-    echo "1. .Tar"
-    echo "2. .Tar.gz"
-    echo "3. .Tar.bz2"
-    echo "4. .Zip"
-    echo "5. .Rar"
+    echo -e "${GREEN}Modo: COMPACTAÇÃO${RESET}"
+    echo -e "${NEWLINE}Arquivos:${NEWLINE}"
+    echo -e "${YELLOW}${arquivos[@]}${RESET}"
+    echo -e "${NEWLINE}FORMATOS DISPONÍVEIS: ${NEWLINE}     "
+    echo "1. Tar"
+    echo "2. Tar.gz"
+    echo "3. Tar.bz2"
+    echo "4. Zip"
+    echo -e "5. Rar${NEWLINE}"
     
     read -p "Sua opção: " option
+    echo -e "${NEWLINE}"
     read -p "Insira um nome para o arquivo a ser criado: " arqname
+    echo -e "${NEWLINE}"
 
     case $option in
         1) tar -cvf "$arqname.tar" "${arquivos[@]}" ;;
@@ -61,22 +79,23 @@ compactar_arquivos() {
         3) tar -jcvf "$arqname.tar.bz2" "${arquivos[@]}" ;;
         4) zip "$arqname.zip" "${arquivos[@]}" ;;
         5) rar a "$arqname.rar" "${arquivos[@]}" ;;
-        *) echo "Formato não suportado"; exit 1 ;;
+        *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
     esac
-    echo "status da operação: $?"
+    # echo "status da operação: $?"
 }
 
 listar_pacote () {
     local arquivos=("$@")
-    echo "Modo: LISTAGEM"
+    echo -e "${GREEN}Modo: LISTAGEM${RESET}"
     for file in "${arquivos[@]}"; do
         local ext="${file##*.}"
-        echo -e "\n arquivo: $file\n"
+        echo -e "${NEWLINE}Pacote:${NEWLINE}"
+        echo -e "${YELLOW}$file${RESET}${NEWLINE}"
         case $ext in
             zip) unzip -l "$file" ;;
             rar) unrar l "$file" ;;
             tar | bz2 | gz) tar -tvf "$file" ;;
-            *) echo "Formato não suportado"; exit 1 ;;
+            *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
     done
     echo -e "______________________________________________\n"
@@ -84,11 +103,13 @@ listar_pacote () {
 
 descompactar_arquivos() {
     local arquivos=("$@")
-    echo "Modo: EXTRAÇÃO"
+    echo -e "${GREEN}Modo: EXTRAÇÃO${RESET}"
     for file in "${arquivos[@]}"; do
         local ext="${file##*.}"
-        echo -e "\n arquivo: $file\n"
+        echo -e ""${NEWLINE}"Arquivo:${NEWLINE}"
+        echo -e "${YELLOW}$file${RESET}${NEWLINE}"
         read -p "Insira um nome para o diretório destino: " dirname
+        echo -e "${NEWLINE}"
         mkdir -p "./$dirname"
 
         case $ext in
@@ -97,9 +118,9 @@ descompactar_arquivos() {
             tar) tar -xvf "$file" -C ./"$dirname" ;;
             bz2) tar -jxvf "$file" -C ./"$dirname" ;;
             gz) tar -zxvf "$file" -C ./"$dirname" ;;
-            *) echo "Formato não suportado"; exit 1 ;;
+            *) echo -e "${RED}Formato não suportado${RESET}"; exit 1 ;;
         esac
-        echo "$?"
+#       echo "$?"
     done
     echo -e "______________________________________________\n"
 }
@@ -120,8 +141,8 @@ while getopts ":c:l:x:ihv" opcoes; do
         i) modo_interativo "$SELETOR" "$arquivos" ;;
         h) uso ;;
         v) versao ;;
-        \?) echo "Opção inválida: -$OPTARG"; uso ;;  # Opção inválida
-        :) echo "A opção -$OPTARG requer um argumento."; uso ;;   # Falta argumento para uma opção
+        \?) echo -e "${RED}Opção inválida: -$OPTARG${RESET}"; uso ;;  # Opção inválida
+        :) echo -e "${RED}A opção -$OPTARG requer um argumento.${RESET}"; uso ;;   # Falta argumento para uma opção
     esac
 done
 
@@ -132,5 +153,5 @@ case $SELETOR in
     3) descompactar_arquivos "${arquivos[@]}" ;;
 esac
 
-echo "Obrigado!"
+echo -e "${NEWLINE}${GREEN}Obrigado!${RESET}"
 exit 0
